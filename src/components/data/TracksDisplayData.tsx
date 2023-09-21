@@ -35,9 +35,14 @@ class TracksDisplayData {
 
   async tracksSlice(start: number, end: number) {
     await this.loadLikedTracksSlice(start, end)
-    await this.loadSlice(start, end);
 
     return this.trackData.slice(start, end)
+  }
+
+  async loadTracksSlice(start: number, end: number) {
+    await this.loadLikedTracksSlice(start, end)
+
+    return 
   }
 
   // async slice(start: number, end: number) {

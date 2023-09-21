@@ -9,8 +9,9 @@ import TrackRow from "./TrackRow"
 import Paginator from "./Paginator"
 import PlaylistsExporter from "./PlaylistsExporter"
 import { apiCall, apiCallErrorHandler } from "helpers"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
-class PlaylistTable extends React.Component {
+class TrackTable extends React.Component {
   PAGE_SIZE = 20
 
   userId = null
@@ -140,6 +141,40 @@ class PlaylistTable extends React.Component {
     })
   }
 
+  loadAllTracks = async () => {
+    for (var offset = 0; offset < this.state.playlistCount; offset = offset + this.PAGE_SIZE) {
+        this.handleTrackDataLoadingStarted(offset)
+
+        await this.tracksData.loadTracksSlice(offset, offset + this.PAGE_SIZE)
+    }
+
+    await this.handleTrackDataLoadingDone()
+  }
+
+  handleTrackDataLoadingStarted = (doneCount) => {
+    Bugsnag.leaveBreadcrumb(`Started loading all song data`)
+
+    this.setState({
+      progressBar: {
+        show: true,
+        label: `Loading song data...`,
+        value: doneCount
+      }
+    })
+  }
+
+  handleTrackDataLoadingDone = async () => {
+    Bugsnag.leaveBreadcrumb("Finished loading song data")
+
+    this.setState({
+      progressBar: {
+        show: false,
+        label: "Song data loaded!",
+        value: this.state.playlistCount
+      }
+    })
+  }
+
   handleConfigChanged = (config) => {
     Bugsnag.leaveBreadcrumb(`Config updated to ${JSON.stringify(config)}`)
 
@@ -179,6 +214,7 @@ class PlaylistTable extends React.Component {
       )
 
       await this.loadCurrentPlaylistPage()
+      await this.loadAllTracks()
     } catch(error) {
       apiCallErrorHandler(error)
     }
@@ -194,7 +230,7 @@ class PlaylistTable extends React.Component {
             <Paginator currentPage={this.state.currentPage} pageLimit={this.PAGE_SIZE} totalRecords={this.state.playlistCount} onPageChanged={this.handlePageChanged}/>
             <PlaylistSearch onPlaylistSearch={this.handlePlaylistSearch} onPlaylistSearchCancel={this.handlePlaylistSearchCancel} ref={this.playlistSearch} />
             <ConfigDropdown onConfigChanged={this.handleConfigChanged} ref={this.configDropdown} />
-            {this.state.progressBar.show && progressBar}
+            {this.state.progressBar.show && progressBar ? progressBar : <p style={{margin: "3px 0px 0px 20px"}}>Data Loaded <FontAwesomeIcon icon={['far', 'check-circle']} size="sm" /></p>}
           </div>
           <table className="table table-hover table-sm">
             <thead>
@@ -239,4 +275,4 @@ class PlaylistTable extends React.Component {
   }
 }
 
-export default PlaylistTable
+export default TrackTable
