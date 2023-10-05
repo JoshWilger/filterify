@@ -32,21 +32,14 @@ class PlaylistsData {
 
   async slice(start: number, end: number) {
     await this.loadSlice(start, end)
-    await this.loadLikedTracksPlaylist()
 
-    // It's a little ugly, but we slip in liked tracks with the first slice
-    if (start === 0) {
-      return [this.likedTracksPlaylist, ...this.data.slice(start, end)]
-    } else {
-      return this.data.slice(start, end)
-    }
+    return this.data.slice(start, end)
   }
 
   async all() {
     await this.loadAll()
-    await this.loadLikedTracksPlaylist()
 
-    return [this.likedTracksPlaylist, ...this.data]
+    return [...this.data]
   }
 
   async search(query: string) {
@@ -60,20 +53,37 @@ class PlaylistsData {
   }
 
   async loadAll() {
-    if (this.onPlaylistsLoadingStarted) {
-      this.onPlaylistsLoadingStarted()
-    }
-
     await this.loadSlice()
 
     // Get the rest of them if necessary
     for (var offset = this.PLAYLIST_LIMIT; offset < this.data.length; offset = offset + this.PLAYLIST_LIMIT) {
       await this.loadSlice(offset, offset + this.PLAYLIST_LIMIT)
     }
+  }
 
-    if (this.onPlaylistsLoadingDone) {
-      this.onPlaylistsLoadingDone()
+  // Memoization supporting multiple calls
+  private playlistItems: any[] = []
+  async getPlaylistItems(playlistIndex: number) {
+    if (this.playlistItems.length > 0) {
+      return this.playlistItems
     }
+
+    var playlist = this.data[playlistIndex]
+    var requests = []
+    var limit = playlist.tracks.limit ? 50 : 100
+
+    for (var offset = 0; offset < playlist.tracks.total; offset = offset + limit) {
+      requests.push(`${playlist.tracks.href.split('?')[0]}?offset=${offset}&limit=${limit}`)
+    }
+
+    const trackPromises = requests.map(request => { return apiCall(request, this.accessToken) })
+    const trackResponses = await Promise.all(trackPromises)
+
+    this.playlistItems = trackResponses.flatMap(response => {
+      return response.data.items.filter((i: any) => i.track) // Exclude null track attributes
+    })
+
+    return this.playlistItems
   }
 
   private async loadSlice(start = 0, end = start + this.PLAYLIST_LIMIT) {

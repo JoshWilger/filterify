@@ -7,21 +7,29 @@ import ConfigDropdown from "./ConfigDropdown"
 import PlaylistSearch from "./PlaylistSearch"
 import TrackRow from "./TrackRow"
 import Paginator from "./Paginator"
-import PlaylistsExporter from "./PlaylistsExporter"
+import TracksExporter from "./TracksExporter"
 import { apiCall, apiCallErrorHandler } from "helpers"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { Button } from "react-bootstrap"
+import PlaylistsData from "./data/PlaylistsData"
 
 class TrackTable extends React.Component {
   PAGE_SIZE = 20
+  LIKED_SONGS_LABEL = 'liked songs'
+  GENRES_LABEL = 'song genre'
+  PLAYLIST_LABEL = 'playlist'
 
   userId = null
   tracksData = null
+  playlistsData = null
 
   state = {
     initialized: false,
     searching: false,
     playlists: [],
     tracks: [],
+    likedPlaylistTracks: [],
+    genres: [],
     playlistCount: 0,
     likedSongs: {
       limit: 0,
@@ -51,9 +59,9 @@ class TrackTable extends React.Component {
     }
   }
 
-  handlePlaylistSearch = async (query) => {
+  handleTrackSearch = async (query) => {
     if (query.length === 0) {
-      this.handlePlaylistSearchCancel()
+      this.handleTrackSearchCancel()
     } else {
       const tracks = await this.tracksData.search(query).catch(apiCallErrorHandler)
 
@@ -72,11 +80,11 @@ class TrackTable extends React.Component {
     }
   }
 
-  handlePlaylistSearchCancel = () => {
-    return this.loadCurrentPlaylistPage().catch(apiCallErrorHandler)
+  handleTrackSearchCancel = () => {
+    return this.loadCurrentTrackPage().catch(apiCallErrorHandler)
   }
 
-  loadCurrentPlaylistPage = async () => {
+  loadCurrentTrackPage = async () => {
     if (this.playlistSearch.current) {
       this.playlistSearch.current.clear()
     }
@@ -86,15 +94,17 @@ class TrackTable extends React.Component {
         ((this.state.currentPage - 1) * this.PAGE_SIZE),
         ((this.state.currentPage - 1) * this.PAGE_SIZE) + this.PAGE_SIZE
       )
+      const playlists = await this.playlistsData.all()
 
       // FIXME: Handle unmounting
       this.setState(
         {
           initialized: true,
           searching: false,
-          playlists: this.tracksData,
           tracks: tracks,
-          playlistCount: await this.tracksData.total()
+          playlists: playlists,
+          genres: this.GENRES_LABEL,
+          playlistCount: await this.tracksData.totalTracks()
         },
         () => {
           const min = ((this.state.currentPage - 1) * this.PAGE_SIZE) + 1
@@ -141,23 +151,52 @@ class TrackTable extends React.Component {
     })
   }
 
-  loadAllTracks = async () => {
-    for (var offset = 0; offset < this.state.playlistCount; offset = offset + this.PAGE_SIZE) {
-        this.handleTrackDataLoadingStarted(offset)
-
-        await this.tracksData.loadTracksSlice(offset, offset + this.PAGE_SIZE)
-    }
+  loadAllTrackData = async () => {
+    await this.loadLikedTracks()
+    await this.loadPlaylistData()
+    
 
     await this.handleTrackDataLoadingDone()
   }
 
-  handleTrackDataLoadingStarted = (doneCount) => {
-    Bugsnag.leaveBreadcrumb(`Started loading all song data`)
+  loadLikedTracks = async () => {
+    for (var offset = 0; offset < this.state.playlistCount; offset = offset + this.PAGE_SIZE) {
+        this.handleTrackDataLoadingStarted(this.LIKED_SONGS_LABEL, offset)
+
+        await this.tracksData.tracksSlice(offset, offset + this.PAGE_SIZE)
+    }
+  }
+
+  loadPlaylistData = async () => {
+    const totalPlaylists = await this.playlistsData.total()
+    var likedTracks = []
+
+    for (var currentIndex = 0; currentIndex < totalPlaylists; currentIndex++) {
+      this.handleTrackDataLoadingStarted(this.PLAYLIST_LABEL, (currentIndex / totalPlaylists) * this.state.playlistCount)
+
+      // const playlistTracks = await this.tracksData.loadTrackPlaylists(...this.state.playlists, currentIndex)
+
+      const playlistTracks = await this.playlistsData.getPlaylistItems(currentIndex)
+      const allLiked = await this.tracksData.all()
+      const likedInPlaylist = allLiked.filter(t => playlistTracks.some(i => {
+        return i.track.id === t.track.id
+      }))
+
+      likedTracks = likedInPlaylist
+    }
+    
+    this.setState({
+      likedPlaylistTracks: likedTracks
+    })
+  }
+
+  handleTrackDataLoadingStarted = (label, doneCount) => {
+    Bugsnag.leaveBreadcrumb(`Started loading ${label} data`)
 
     this.setState({
       progressBar: {
         show: true,
-        label: `Loading song data...`,
+        label: `Loading ${label} data...`,
         value: doneCount
       }
     })
@@ -185,7 +224,7 @@ class TrackTable extends React.Component {
     try {
       this.setState(
         { currentPage: page },
-        this.loadCurrentPlaylistPage
+        this.loadCurrentTrackPage
       )
     } catch(error) {
       apiCallErrorHandler(error)
@@ -212,9 +251,15 @@ class TrackTable extends React.Component {
         this.handlePlaylistsLoadingStarted,
         this.handlePlaylistsLoadingDone
       )
+      this.playlistsData = new PlaylistsData(
+        this.props.accessToken,
+        this.userId,
+        this.handlePlaylistsLoadingStarted,
+        this.handlePlaylistsLoadingDone
+      )
 
-      await this.loadCurrentPlaylistPage()
-      await this.loadAllTracks()
+      await this.loadCurrentTrackPage()
+      await this.loadAllTrackData()
     } catch(error) {
       apiCallErrorHandler(error)
     }
@@ -228,38 +273,46 @@ class TrackTable extends React.Component {
         <div id="playlists">
           <div id="playlistsHeader">
             <Paginator currentPage={this.state.currentPage} pageLimit={this.PAGE_SIZE} totalRecords={this.state.playlistCount} onPageChanged={this.handlePageChanged}/>
-            <PlaylistSearch onPlaylistSearch={this.handlePlaylistSearch} onPlaylistSearchCancel={this.handlePlaylistSearchCancel} ref={this.playlistSearch} />
-            <ConfigDropdown onConfigChanged={this.handleConfigChanged} ref={this.configDropdown} />
+            <TracksExporter
+                accessToken={this.props.accessToken}
+                onPlaylistsExportDone={this.handlePlaylistsExportDone}
+                onPlaylistExportStarted={this.handlePlaylistExportStarted}
+                playlistsData={this.tracksData}
+                config={this.state.config}
+                disabled={this.state.searching}
+            />
+            <Button type="submit" variant="danger" size="sm" onClick={this.exportPlaylist} className="text-nowrap" style={{margin:"0px 0px 15px 20px"}}>
+                <FontAwesomeIcon icon={['fas', 'times']} size="1x" /> Reset Filters
+            </Button>
             {this.state.progressBar.show && progressBar ? progressBar : <p style={{margin: "3px 0px 0px 20px"}}>Data Loaded <FontAwesomeIcon icon={['far', 'check-circle']} size="sm" /></p>}
           </div>
           <table className="table table-hover table-sm">
             <thead>
               <tr>
                 <th style={{width: "30px"}}></th>
-                <th>Name</th>
-                <th style={{width: "150px"}}>Artists</th>
+                <th>
+                    <div style={{display: "flex"}}>
+                        Name 
+                        <ConfigDropdown onConfigChanged={this.handleConfigChanged} ref={this.configDropdown}  />                        
+                    </div>
+                    <PlaylistSearch onPlaylistSearch={this.handleTrackSearch} onPlaylistSearchCancel={this.handleTrackSearchCancel} ref={this.playlistSearch}/>
+                </th>
+                <th style={{width: "120"}}>Artists</th>
                 <th style={{width: "100px"}}>Genres</th>
                 <th style={{width: "120px"}}>Date Added</th>
-                <th style={{width: "100px"}}>Liked?</th>
-                <th style={{width: "100px"}} className="text-right">
-                  <PlaylistsExporter
-                    accessToken={this.props.accessToken}
-                    onPlaylistsExportDone={this.handlePlaylistsExportDone}
-                    onPlaylistExportStarted={this.handlePlaylistExportStarted}
-                    playlistsData={this.tracksData}
-                    config={this.state.config}
-                    disabled={this.state.searching}
-                  />
-                </th>
+                <th style={{width: "250px"}}>Playlists</th>
               </tr>
             </thead>
             <tbody>
-              {this.state.tracks.map((trackItem, i) => {
+              {this.state.likedPlaylistTracks.map((trackItem) => {
                 return <TrackRow
                   playlist={trackItem}
                   key={trackItem.id}
                   accessToken={this.props.accessToken}
                   config={this.state.config}
+                  playlists={this.state.playlists}
+                  likedPlaylistTracks={this.state.likedPlaylistTracks}
+                  genres={this.state.genres}
                 />
               })}
             </tbody>

@@ -9,10 +9,8 @@ class TracksDisplayData {
   private accessToken: string
   private onPlaylistsLoadingStarted?: () => void
   private onPlaylistsLoadingDone?: () => void
-  private data: any[]
   private trackData: any[]
   private likedTracksPlaylist: any
-  private dataInitialized = false
   private trackDataInitialized = false
 
   constructor(accessToken: string, userId: string, onPlaylistsLoadingStarted?: () => void, onPlaylistsLoadingDone?: () => void) {
@@ -20,17 +18,15 @@ class TracksDisplayData {
     this.userId = userId
     this.onPlaylistsLoadingStarted = onPlaylistsLoadingStarted
     this.onPlaylistsLoadingDone = onPlaylistsLoadingDone
-    this.data = []
     this.trackData = []
-    this.likedTracksPlaylist = null
   }
 
-  async total() {
+  async totalTracks() {
     if (!this.trackDataInitialized) {
       await this.loadLikedTracksSlice()
     }
 
-    return this.likedTracksPlaylist.tracks.total
+    return this.trackData.length
   }
 
   async tracksSlice(start: number, end: number) {
@@ -39,33 +35,14 @@ class TracksDisplayData {
     return this.trackData.slice(start, end)
   }
 
-  async loadTracksSlice(start: number, end: number) {
-    await this.loadLikedTracksSlice(start, end)
-
-    return 
-  }
-
-  // async slice(start: number, end: number) {
-  //   await this.loadSlice(start, end)
-  //   await this.loadLikedTracksPlaylist()
-
-  //   // It's a little ugly, but we slip in liked tracks with the first slice
-  //   if (start === 0) {
-  //     return [this.likedTracksPlaylist, ...this.data.slice(start, end)]
-  //   } else {
-  //     return this.data.slice(start, end)
-  //   }
-  // }
-
   async all() {
-    await this.loadAll()
-    await this.loadLikedTracksPlaylist()
+    await this.loadAllTracks()
 
-    return [this.likedTracksPlaylist, ...this.data]
+    return [...this.trackData]
   }
 
   async search(query: string) {
-    await this.loadAll()
+    await this.loadAllTracks()
 
     // Case-insensitive search in playlist name
     // TODO: Add lazy evaluation for performance?
@@ -74,48 +51,48 @@ class TracksDisplayData {
       .slice(0, this.SEARCH_LIMIT)
   }
 
-  async loadAll() {
-    if (this.onPlaylistsLoadingStarted) {
-      this.onPlaylistsLoadingStarted()
-    }
-
+  async loadAllTracks() {
     await this.loadLikedTracksSlice()
 
     // Get the rest of them if necessary
     for (var offset = this.PLAYLIST_LIMIT; offset < this.trackData.length; offset = offset + this.PLAYLIST_LIMIT) {
       await this.loadLikedTracksSlice(offset, offset + this.PLAYLIST_LIMIT)
     }
-
-    if (this.onPlaylistsLoadingDone) {
-      this.onPlaylistsLoadingDone()
-    }
   }
 
-  private async loadSlice(start = 0, end = start + this.PLAYLIST_LIMIT) {
-    if (this.dataInitialized) {
-      const loadedData = this.data.slice(start, end)
+  private trackPlaylists: any[] = []
+  async loadTrackPlaylists(playlists: any[], currentIndex: number) {
+    if (this.trackPlaylists.length === 0) {
+      this.trackPlaylists = Array(this.trackData.length).fill(null)
+    }
 
-      if (loadedData.filter(i => !i).length === 0) {
-        return loadedData
+    var playlist = playlists[currentIndex]
+    var requests = []
+    var limit = playlist.tracks.limit ? 50 : 100
+
+    for (var offset = 0; offset < playlist.tracks.total; offset = offset + limit) {
+      requests.push(`${playlist.tracks.href.split('?')[0]}?offset=${offset}&limit=${limit}`)
+    }
+
+    const trackPromises = requests.map(request => { return apiCall(request, this.accessToken) })
+    const trackResponses = await Promise.all(trackPromises)
+
+    const playlistTracks = trackResponses.flatMap(response => {
+      return response.data.items.filter((i: any) => i.track) // Exclude null track attributes
+    })
+
+    for (let index = 0; index < playlistTracks.length; index++) {
+      const elementIndex = this.trackData.findIndex(playlistTracks[index]);
+      
+      if (elementIndex > -1) {
+        this.trackPlaylists[elementIndex] = [...playlist]
       }
     }
 
-    const playlistsUrl = `https://api.spotify.com/v1/users/${this.userId}/playlists?offset=${start}&limit=${end-start}`
-    const playlistsResponse = await apiCall(playlistsUrl, this.accessToken)
-    const playlistsData = playlistsResponse.data
-
-    if (!this.dataInitialized) {
-      this.data = Array(playlistsData.total).fill(null)
-      this.dataInitialized = true
-    }
-
-    this.data.splice(start, playlistsData.items.length, ...playlistsData.items)
+    return this.trackPlaylists
   }
 
   private async loadLikedTracksSlice(start = 0, end = start + this.PLAYLIST_LIMIT) {
-    if (this.likedTracksPlaylist == null) {
-      await this.loadLikedTracksPlaylist()
-    }
     if (this.trackDataInitialized) {
       const loadedData = this.trackData.slice(start, end)
 
