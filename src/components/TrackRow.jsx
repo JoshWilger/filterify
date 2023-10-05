@@ -27,6 +27,23 @@ class TrackRow extends React.Component {
     return `${month}/${day}/${year}`
   }
 
+  renderPlaylists(trackPlaylists) {
+    const loading = this.props.loading
+    const loadingString = "Loading..."
+
+    if (!trackPlaylists) {
+      return loading ? loadingString : "None"
+    }
+    else {
+      return trackPlaylists.map((playlist, i) => {
+        return [
+          <a key={playlist.id} href={playlist.uri}>{playlist.name}</a>, 
+          i === trackPlaylists.length - 1 ? loading ? ", " + loadingString : "" : ", "
+        ]
+      })      
+    }
+  }
+
   renderArtists(artists) {
     return artists.map((artist, i) => {
       return [
@@ -60,7 +77,7 @@ class TrackRow extends React.Component {
         <td>{this.renderArtists(track.artists)}</td>
         <td>{this.renderGenres(this.props.genres)}</td>
         <td>{this.formatDate(this.props.playlist.added_at)}</td>
-        <td>{this.props.playlists[0].name}</td>
+        <td>{this.renderPlaylists(this.props.likedPlaylistTracks)}</td>
       </tr>
     );
   }

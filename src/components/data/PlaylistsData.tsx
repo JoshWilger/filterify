@@ -63,9 +63,9 @@ class PlaylistsData {
 
   // Memoization supporting multiple calls
   private playlistItems: any[] = []
-  async getPlaylistItems(playlistIndex: number) {
-    if (this.playlistItems.length > 0) {
-      return this.playlistItems
+  async getPlaylistItems(playlistIndex: number, trackData: any[]) {
+    if (this.playlistItems.length <= 0) {
+      this.playlistItems = Array(trackData.length).fill(null)
     }
 
     var playlist = this.data[playlistIndex]
@@ -79,9 +79,17 @@ class PlaylistsData {
     const trackPromises = requests.map(request => { return apiCall(request, this.accessToken) })
     const trackResponses = await Promise.all(trackPromises)
 
-    this.playlistItems = trackResponses.flatMap(response => {
+    const playlistTracks = trackResponses.flatMap(response => {
       return response.data.items.filter((i: any) => i.track) // Exclude null track attributes
     })
+
+    for (let index = 0; index < playlistTracks.length; index++) {
+      const elementIndex = trackData.indexOf(playlistTracks[index]);
+      
+      if (elementIndex > -1) {
+        this.playlistItems[elementIndex] = [playlist]
+      }
+    }
 
     return this.playlistItems
   }

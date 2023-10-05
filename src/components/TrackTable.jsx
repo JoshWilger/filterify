@@ -14,9 +14,9 @@ import { Button } from "react-bootstrap"
 import PlaylistsData from "./data/PlaylistsData"
 
 class TrackTable extends React.Component {
-  PAGE_SIZE = 20
+  PAGE_SIZE = 15
   LIKED_SONGS_LABEL = 'liked songs'
-  GENRES_LABEL = 'song genre'
+  GENRES_LABEL = 'artist genre'
   PLAYLIST_LABEL = 'playlist'
 
   userId = null
@@ -154,7 +154,6 @@ class TrackTable extends React.Component {
   loadAllTrackData = async () => {
     await this.loadLikedTracks()
     await this.loadPlaylistData()
-    
 
     await this.handleTrackDataLoadingDone()
   }
@@ -169,25 +168,16 @@ class TrackTable extends React.Component {
 
   loadPlaylistData = async () => {
     const totalPlaylists = await this.playlistsData.total()
-    var likedTracks = []
 
     for (var currentIndex = 0; currentIndex < totalPlaylists; currentIndex++) {
       this.handleTrackDataLoadingStarted(this.PLAYLIST_LABEL, (currentIndex / totalPlaylists) * this.state.playlistCount)
 
-      // const playlistTracks = await this.tracksData.loadTrackPlaylists(...this.state.playlists, currentIndex)
+      const playlistTracks = await this.tracksData.loadTrackPlaylists(await this.playlistsData.all(), currentIndex)
 
-      const playlistTracks = await this.playlistsData.getPlaylistItems(currentIndex)
-      const allLiked = await this.tracksData.all()
-      const likedInPlaylist = allLiked.filter(t => playlistTracks.some(i => {
-        return i.track.id === t.track.id
-      }))
-
-      likedTracks = likedInPlaylist
+      this.setState({
+        likedPlaylistTracks: playlistTracks
+      })
     }
-    
-    this.setState({
-      likedPlaylistTracks: likedTracks
-    })
   }
 
   handleTrackDataLoadingStarted = (label, doneCount) => {
@@ -304,15 +294,16 @@ class TrackTable extends React.Component {
               </tr>
             </thead>
             <tbody>
-              {this.state.likedPlaylistTracks.map((trackItem) => {
+              {this.state.tracks.map((trackItem, i) => {
                 return <TrackRow
                   playlist={trackItem}
                   key={trackItem.id}
                   accessToken={this.props.accessToken}
                   config={this.state.config}
                   playlists={this.state.playlists}
-                  likedPlaylistTracks={this.state.likedPlaylistTracks}
+                  likedPlaylistTracks={this.state.likedPlaylistTracks[((this.state.currentPage - 1) * this.PAGE_SIZE) + i]}
                   genres={this.state.genres}
+                  loading={this.state.progressBar.show}
                 />
               })}
             </tbody>

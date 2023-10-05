@@ -60,7 +60,7 @@ class TracksDisplayData {
     }
   }
 
-  private trackPlaylists: any[] = []
+  private trackPlaylists: any[][] = []
   async loadTrackPlaylists(playlists: any[], currentIndex: number) {
     if (this.trackPlaylists.length === 0) {
       this.trackPlaylists = Array(this.trackData.length).fill(null)
@@ -81,11 +81,22 @@ class TracksDisplayData {
       return response.data.items.filter((i: any) => i.track) // Exclude null track attributes
     })
 
-    for (let index = 0; index < playlistTracks.length; index++) {
-      const elementIndex = this.trackData.findIndex(playlistTracks[index]);
+    const allLiked = await this.all()
+    const liked = allLiked.filter(t => playlistTracks.some(i => {
+      return i.track.id === t.track.id
+    }))
+
+    for (let index = 0; index < liked.length; index++) {
+      const elementIndex = allLiked.indexOf(liked[index]);
+      const current = this.trackPlaylists[elementIndex]
       
       if (elementIndex > -1) {
-        this.trackPlaylists[elementIndex] = [...playlist]
+        if (!current) {
+          this.trackPlaylists[elementIndex] = [playlist]
+        }
+        else if (!current.includes(playlist)) {
+          this.trackPlaylists[elementIndex].push(playlist)
+        }
       }
     }
 
