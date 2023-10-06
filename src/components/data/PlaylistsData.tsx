@@ -42,6 +42,12 @@ class PlaylistsData {
     return [...this.data]
   }
 
+  async allMine() {
+    await this.loadAll()
+
+    return [...this.data.filter(p => p.owner.id === this.userId)]
+  }
+
   async search(query: string) {
     await this.loadAll()
 

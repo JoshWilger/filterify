@@ -14,7 +14,7 @@ import { Button } from "react-bootstrap"
 import PlaylistsData from "./data/PlaylistsData"
 
 class TrackTable extends React.Component {
-  PAGE_SIZE = 15
+  PAGE_SIZE = 10
   LIKED_SONGS_LABEL = 'liked songs'
   GENRES_LABEL = 'artist genre'
   PLAYLIST_LABEL = 'playlist'
@@ -94,7 +94,7 @@ class TrackTable extends React.Component {
         ((this.state.currentPage - 1) * this.PAGE_SIZE),
         ((this.state.currentPage - 1) * this.PAGE_SIZE) + this.PAGE_SIZE
       )
-      const playlists = await this.playlistsData.all()
+      const playlists = await this.playlistsData.allMine()
 
       // FIXME: Handle unmounting
       this.setState(
@@ -167,12 +167,15 @@ class TrackTable extends React.Component {
   }
 
   loadPlaylistData = async () => {
-    const totalPlaylists = await this.playlistsData.total()
+    const myPlaylists = await this.playlistsData.allMine()
 
-    for (var currentIndex = 0; currentIndex < totalPlaylists; currentIndex++) {
-      this.handleTrackDataLoadingStarted(this.PLAYLIST_LABEL, (currentIndex / totalPlaylists) * this.state.playlistCount)
+    for (var currentIndex = 0; currentIndex < myPlaylists.length; currentIndex++) {
+      const progressValue = (currentIndex / myPlaylists.length) * this.state.playlistCount
+      const updatedValueCheck = progressValue > this.state.progressBar.value ? progressValue : currentIndex === 0 ? 0 : this.state.progressBar.value
+      // updated value check is a hotfix to prevent staggering loading bar
+      this.handleTrackDataLoadingStarted(this.PLAYLIST_LABEL, updatedValueCheck)
 
-      const playlistTracks = await this.tracksData.loadTrackPlaylists(await this.playlistsData.all(), currentIndex)
+      const playlistTracks = await this.tracksData.loadTrackPlaylists(myPlaylists, currentIndex)
 
       this.setState({
         likedPlaylistTracks: playlistTracks
