@@ -103,6 +103,38 @@ class TracksDisplayData {
     return this.trackPlaylists
   }
 
+  async loadArtistData(currentTracks: any) {
+    const artistIds = Array.from(new Set(currentTracks.map((trackItem: any) => {
+      return trackItem.track
+        .artists
+        .filter((a: any) => a.type === "artist")
+        .map((a: any) => a.id)
+        .filter((i: string) => i)
+    })))
+
+    let requests = []
+
+    for (var offset = 0; offset < artistIds.length; offset = offset + this.PLAYLIST_LIMIT) {
+      requests.push(`https://api.spotify.com/v1/artists?ids=${artistIds.slice(offset, offset + this.PLAYLIST_LIMIT)}`)
+    }
+
+    const artistPromises = requests.map(request => { return apiCall(request, this.accessToken) })
+    const artistResponses = await Promise.all(artistPromises)
+
+    const artistsById = new Map(artistResponses.flatMap((response) => response.data.artists).map((artist: any) => [artist.id, artist]))
+
+    return new Map<string, string[]>(currentTracks.map((trackItem: any) => {
+      return [
+        trackItem.track.uri,
+        [
+          trackItem.track.artists.map((a: any) => {
+            return artistsById.has(a.id) ? artistsById.get(a.id)!.genres.filter((g: string) => g).join(', ') : ""
+          }).filter((g: string) => g).join(", ")
+        ]
+      ]
+    }))
+  }
+
   private async loadLikedTracksSlice(start = 0, end = start + this.PLAYLIST_LIMIT) {
     if (this.trackDataInitialized) {
       const loadedData = this.trackData.slice(start, end)
@@ -125,10 +157,6 @@ class TracksDisplayData {
   }
 
   private async loadLikedTracksPlaylist() {
-    if (this.likedTracksPlaylist !== null) {
-      return
-    }
-
     const likedTracksUrl = `https://api.spotify.com/v1/users/${this.userId}/tracks`
     const likedTracksResponse = await apiCall(likedTracksUrl, this.accessToken)
     const likedTracksData = likedTracksResponse.data

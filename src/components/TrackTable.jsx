@@ -95,6 +95,7 @@ class TrackTable extends React.Component {
         ((this.state.currentPage - 1) * this.PAGE_SIZE) + this.PAGE_SIZE
       )
       const playlists = await this.playlistsData.allMine()
+      const genres = await this.tracksData.loadArtistData(tracks)
 
       // FIXME: Handle unmounting
       this.setState(
@@ -103,7 +104,7 @@ class TrackTable extends React.Component {
           searching: false,
           tracks: tracks,
           playlists: playlists,
-          genres: this.GENRES_LABEL,
+          genres: genres,
           playlistCount: await this.tracksData.totalTracks()
         },
         () => {
@@ -284,15 +285,15 @@ class TrackTable extends React.Component {
               <tr>
                 <th style={{width: "30px"}}></th>
                 <th>
-                    <div style={{display: "flex"}}>
+                    <div style={{width: "120", display: "flex"}}>
                         Name 
                         <ConfigDropdown onConfigChanged={this.handleConfigChanged} ref={this.configDropdown}  />                        
                     </div>
                     <PlaylistSearch onPlaylistSearch={this.handleTrackSearch} onPlaylistSearchCancel={this.handleTrackSearchCancel} ref={this.playlistSearch}/>
                 </th>
-                <th style={{width: "120"}}>Artists</th>
-                <th style={{width: "100px"}}>Genres</th>
-                <th style={{width: "120px"}}>Date Added</th>
+                <th style={{width: "100"}}>Artists</th>
+                <th style={{width: "250px"}}>Genres</th>
+                <th style={{width: "110px"}}>Date Added</th>
                 <th style={{width: "250px"}}>Playlists</th>
               </tr>
             </thead>
@@ -305,7 +306,7 @@ class TrackTable extends React.Component {
                   config={this.state.config}
                   playlists={this.state.playlists}
                   likedPlaylistTracks={this.state.likedPlaylistTracks[((this.state.currentPage - 1) * this.PAGE_SIZE) + i]}
-                  genres={this.state.genres}
+                  genres={this.state.genres.get(trackItem.track.uri)}
                   loading={this.state.progressBar.show}
                 />
               })}
