@@ -1,8 +1,9 @@
 import { apiCall } from "helpers"
+import TracksBaseData from "./TracksBaseData"
 
 // Handles cached loading of all or subsets of playlist data
 class TracksDisplayData {
-  PLAYLIST_LIMIT = 50
+  TRACK_LIMIT = 50
   SEARCH_LIMIT = 20
 
   userId: string
@@ -51,56 +52,17 @@ class TracksDisplayData {
       .slice(0, this.SEARCH_LIMIT)
   }
 
+  trackIndex(trackUri: string) {
+    return this.trackData.findIndex(t => t.track.uri === trackUri)
+  }
+
   async loadAllTracks() {
     await this.loadLikedTracksSlice()
 
     // Get the rest of them if necessary
-    for (var offset = this.PLAYLIST_LIMIT; offset < this.trackData.length; offset = offset + this.PLAYLIST_LIMIT) {
-      await this.loadLikedTracksSlice(offset, offset + this.PLAYLIST_LIMIT)
+    for (var offset = this.TRACK_LIMIT; offset < this.trackData.length; offset = offset + this.TRACK_LIMIT) {
+      await this.loadLikedTracksSlice(offset, offset + this.TRACK_LIMIT)
     }
-  }
-
-  private trackPlaylists: any[][] = []
-  async loadTrackPlaylists(playlists: any[], currentIndex: number) {
-    if (this.trackPlaylists.length === 0) {
-      this.trackPlaylists = Array(this.trackData.length).fill(null)
-    }
-
-    var playlist = playlists[currentIndex]
-    var requests = []
-    var limit = playlist.tracks.limit ? 50 : 100
-
-    for (var offset = 0; offset < playlist.tracks.total; offset = offset + limit) {
-      requests.push(`${playlist.tracks.href.split('?')[0]}?offset=${offset}&limit=${limit}`)
-    }
-
-    const trackPromises = requests.map(request => { return apiCall(request, this.accessToken) })
-    const trackResponses = await Promise.all(trackPromises)
-
-    const playlistTracks = trackResponses.flatMap(response => {
-      return response.data.items.filter((i: any) => i.track) // Exclude null track attributes
-    })
-
-    const allLiked = await this.all()
-    const liked = allLiked.filter(t => playlistTracks.some(i => {
-      return i.track.id === t.track.id
-    }))
-
-    for (let index = 0; index < liked.length; index++) {
-      const elementIndex = allLiked.indexOf(liked[index]);
-      const current = this.trackPlaylists[elementIndex]
-      
-      if (elementIndex > -1) {
-        if (!current) {
-          this.trackPlaylists[elementIndex] = [playlist]
-        }
-        else if (!current.includes(playlist)) {
-          this.trackPlaylists[elementIndex].push(playlist)
-        }
-      }
-    }
-
-    return this.trackPlaylists
   }
 
   async loadArtistData(currentTracks: any) {
@@ -114,8 +76,8 @@ class TracksDisplayData {
 
     let requests = []
 
-    for (var offset = 0; offset < artistIds.length; offset = offset + this.PLAYLIST_LIMIT) {
-      requests.push(`https://api.spotify.com/v1/artists?ids=${artistIds.slice(offset, offset + this.PLAYLIST_LIMIT)}`)
+    for (var offset = 0; offset < artistIds.length; offset = offset + this.SEARCH_LIMIT) {
+      requests.push(`https://api.spotify.com/v1/artists?ids=${artistIds.slice(offset, offset + this.SEARCH_LIMIT)}`)
     }
 
     const artistPromises = requests.map(request => { return apiCall(request, this.accessToken) })
@@ -135,7 +97,37 @@ class TracksDisplayData {
     }))
   }
 
-  private async loadLikedTracksSlice(start = 0, end = start + this.PLAYLIST_LIMIT) {
+  private trackPlaylists: any[][] = []
+  async loadTrackPlaylists(playlist: any) {
+    if (this.trackPlaylists.length === 0) {
+      this.trackPlaylists = Array(this.trackData.length).fill(null)
+    }
+
+    const playlistTracks = await new TracksBaseData(this.accessToken, playlist).trackItems()
+
+    const allLiked = await this.all()
+    const likedPlaylistTracks = allLiked.filter(t => playlistTracks.some(i => {
+      return i.track.id === t.track.id
+    }))
+
+    for (let index = 0; index < likedPlaylistTracks.length; index++) {
+      const elementIndex = allLiked.indexOf(likedPlaylistTracks[index]);
+      const current = this.trackPlaylists[elementIndex]
+      
+      if (elementIndex > -1) {
+        if (!current) {
+          this.trackPlaylists[elementIndex] = [playlist]
+        }
+        else if (!current.includes(playlist)) {
+          this.trackPlaylists[elementIndex].push(playlist)
+        }
+      }
+    }
+
+    return this.trackPlaylists
+  }
+
+  private async loadLikedTracksSlice(start = 0, end = start + this.TRACK_LIMIT) {
     if (this.trackDataInitialized) {
       const loadedData = this.trackData.slice(start, end)
 
@@ -153,7 +145,11 @@ class TracksDisplayData {
       this.trackDataInitialized = true
     }
 
-    this.trackData.splice(start, likedTracksData.items.length, ...likedTracksData.items)
+    var likedTrackItems: any = likedTracksData.items
+    const genres = await this.loadArtistData(likedTrackItems)
+    likedTrackItems.map((i: any) => i.genres=genres.get(i.track.uri))
+
+    this.trackData.splice(start, likedTrackItems.length, ...likedTrackItems)
   }
 
   private async loadLikedTracksPlaylist() {

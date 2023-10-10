@@ -29,7 +29,6 @@ class TrackTable extends React.Component {
     playlists: [],
     tracks: [],
     likedPlaylistTracks: [],
-    genres: [],
     playlistCount: 0,
     likedSongs: {
       limit: 0,
@@ -68,7 +67,6 @@ class TrackTable extends React.Component {
       this.setState({
         searching: true,
         tracks: tracks,
-        playlistCount: tracks.length,
         currentPage: 1
       })
 
@@ -94,8 +92,6 @@ class TrackTable extends React.Component {
         ((this.state.currentPage - 1) * this.PAGE_SIZE),
         ((this.state.currentPage - 1) * this.PAGE_SIZE) + this.PAGE_SIZE
       )
-      const playlists = await this.playlistsData.allMine()
-      const genres = await this.tracksData.loadArtistData(tracks)
 
       // FIXME: Handle unmounting
       this.setState(
@@ -103,8 +99,6 @@ class TrackTable extends React.Component {
           initialized: true,
           searching: false,
           tracks: tracks,
-          playlists: playlists,
-          genres: genres,
           playlistCount: await this.tracksData.totalTracks()
         },
         () => {
@@ -176,7 +170,7 @@ class TrackTable extends React.Component {
       // updated value check is a hotfix to prevent staggering loading bar
       this.handleTrackDataLoadingStarted(this.PLAYLIST_LABEL, updatedValueCheck)
 
-      const playlistTracks = await this.tracksData.loadTrackPlaylists(myPlaylists, currentIndex)
+      const playlistTracks = await this.tracksData.loadTrackPlaylists(myPlaylists[currentIndex])
 
       this.setState({
         likedPlaylistTracks: playlistTracks
@@ -304,9 +298,11 @@ class TrackTable extends React.Component {
                   key={trackItem.id}
                   accessToken={this.props.accessToken}
                   config={this.state.config}
-                  playlists={this.state.playlists}
-                  likedPlaylistTracks={this.state.likedPlaylistTracks[((this.state.currentPage - 1) * this.PAGE_SIZE) + i]}
-                  genres={this.state.genres.get(trackItem.track.uri)}
+                  likedPlaylistTracks={this.state.likedPlaylistTracks[
+                    this.state.searching ?
+                    this.tracksData.trackIndex(trackItem.track.uri):
+                    ((this.state.currentPage - 1) * this.PAGE_SIZE) + i
+                  ]}
                   loading={this.state.progressBar.show}
                 />
               })}
