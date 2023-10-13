@@ -5,6 +5,7 @@ import TracksBaseData from "./TracksBaseData"
 class TracksDisplayData {
   TRACK_LIMIT = 50
   SEARCH_LIMIT = 20
+  private SPLIT_QUERY_EXPRESSION = new RegExp(", ") 
 
   userId: string
   private accessToken: string
@@ -42,14 +43,68 @@ class TracksDisplayData {
     return [...this.trackData]
   }
 
-  async search(query: string) {
+  // TODO: Add lazy evaluation for performance?
+  async nameSearch(query: string) {
+    await this.loadAllTracks()
+
+    // Case-insensitive search in track name
+    return this.trackData.filter(
+      trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
+      queryWord => trackItem.track.name.split(' ').some(
+      (trackWord: string) => queryWord !== "" 
+        && trackWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
+    )))
+  }
+
+  async artistSearch(query: string) {
+    await this.loadAllTracks()
+
+    // Case-insensitive search in artist name
+    return this.trackData.filter(
+      trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
+      queryWord => trackItem.track.artists.some(
+      (artist: any) => artist.name.split(' ').some(
+      (artistWord: string) => queryWord !== "" 
+        && artistWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
+    ))))
+  }
+
+  async genreSearch(query: string) {
+    await this.loadAllTracks()
+
+    // Case-insensitive search in genre name
+    return this.trackData.filter(
+      (trackItem: any) => query.split(this.SPLIT_QUERY_EXPRESSION).some(
+      queryWord => trackItem.genres.some(
+      (genre: string) => genre.split(", ").some(
+      (genreWord: string) => queryWord !== "" 
+        && genreWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())        
+    ))))
+  }
+
+  async dateSearch(query: string) {
+    await this.loadAllTracks()
+
+    // Case-insensitive search in date added name
+    return this.trackData.filter(
+      trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
+      queryWord => queryWord !== "" 
+        && (trackItem.added_at.split("T")[0].substring(5) + "-" + trackItem.added_at.split("T")[0].substring(0, 4))
+        .includes(queryWord.toLowerCase())
+    ))
+  }
+
+  async playlistSearch(query: string) {
     await this.loadAllTracks()
 
     // Case-insensitive search in playlist name
-    // TODO: Add lazy evaluation for performance?
-    return this.trackData
-      .filter(t => t.track.name.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, this.SEARCH_LIMIT)
+    return this.trackPlaylists.filter(item => item).filter( // TODO: Return tracks, not playlists
+      trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
+      queryWord => trackItem.some(
+      (playlist: any) => playlist.name.split(' ').some( // TODO: Only split when not searching multiple words for each searching method
+      (playlistWord: string) => queryWord !== "" 
+        && playlistWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
+    ))))
   }
 
   trackIndex(trackUri: string) {
@@ -146,7 +201,7 @@ class TracksDisplayData {
     }
 
     var likedTrackItems: any = likedTracksData.items
-    const genres = await this.loadArtistData(likedTrackItems)
+    const genres = await this.loadArtistData(likedTrackItems) // TODO: improve loading time by searching stored artist values
     likedTrackItems.map((i: any) => i.genres=genres.get(i.track.uri))
 
     this.trackData.splice(start, likedTrackItems.length, ...likedTrackItems)

@@ -24,7 +24,7 @@ class TrackRow extends React.Component {
     const [date] = dateToFormat.split("T");
     const [year, month, day] = date.split("-")
 
-    return `${month}/${day}/${year}`
+    return `${month}-${day}-${year}`
   }
 
   renderPlaylists(trackPlaylists) {
@@ -53,10 +53,6 @@ class TrackRow extends React.Component {
     })
   }
 
-  renderGenres(genres) {
-    return genres
-  }
-
   render() {
     let track = this.props.playlist.track
 
@@ -75,7 +71,7 @@ class TrackRow extends React.Component {
         <td>{this.renderIcon(track)}</td>
         <td><a href={track.uri}>{track.name}</a></td>
         <td>{this.renderArtists(track.artists)}</td>
-        <td>{this.renderGenres(this.props.playlist.genres)}</td>
+        <td>{this.props.playlist.genres}</td>
         <td>{this.formatDate(this.props.playlist.added_at)}</td>
         <td>{this.renderPlaylists(this.props.likedPlaylistTracks)}</td>
       </tr>

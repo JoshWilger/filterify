@@ -5,7 +5,8 @@ import { Form, InputGroup } from "react-bootstrap"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 type PlaylistSearchProps = {
-  onPlaylistSearch: (query: string) => void
+  label: string
+  onPlaylistSearch: (query: string, label:string) => void
   onPlaylistSearchCancel: () => Promise<any>
 }
 
@@ -48,7 +49,7 @@ class PlaylistSearch extends React.Component<PlaylistSearchProps> {
     if (this.state.query.length > 0) {
       this.setState(
         { searchSubmitted: true },
-        () => { this.props.onPlaylistSearch(this.state.query) }
+        () => { this.props.onPlaylistSearch(this.state.query, this.props.label) }
       )
     }
   }

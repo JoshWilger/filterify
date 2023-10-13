@@ -3,8 +3,6 @@ import { ProgressBar } from "react-bootstrap"
 
 import Bugsnag from "@bugsnag/js"
 import TracksDisplayData from "./data/TracksDisplayData"
-import ConfigDropdown from "./ConfigDropdown"
-import PlaylistSearch from "./PlaylistSearch"
 import TrackRow from "./TrackRow"
 import Paginator from "./Paginator"
 import TracksExporter from "./TracksExporter"
@@ -12,12 +10,16 @@ import { apiCall, apiCallErrorHandler } from "helpers"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button } from "react-bootstrap"
 import PlaylistsData from "./data/PlaylistsData"
+import DataFiltering from "./DataFiltering"
 
 class TrackTable extends React.Component {
   PAGE_SIZE = 10
-  LIKED_SONGS_LABEL = 'liked songs'
-  GENRES_LABEL = 'artist genre'
-  PLAYLIST_LABEL = 'playlist'
+  LIKED_SONGS_LABEL = "liked songs"
+  NAME_LABEL = "Song"
+  ARTIST_LABEL = "Artists"
+  GENRE_LABEL = "Genres"
+  DATE_ADDED_LABEL = "Date Added"
+  PLAYLIST_LABEL = "Playlists"
 
   userId = null
   tracksData = null
@@ -51,18 +53,38 @@ class TrackTable extends React.Component {
     super(props)
 
     this.configDropdown = React.createRef()
-    this.playlistSearch = React.createRef()
+    this.trackSearch = React.createRef()
 
     if (props.config) {
       this.state.config = props.config
     }
   }
 
-  handleTrackSearch = async (query) => {
+  handleTrackSearch = async (query, label) => {
     if (query.length === 0) {
       this.handleTrackSearchCancel()
     } else {
-      const tracks = await this.tracksData.search(query).catch(apiCallErrorHandler)
+      let tracks = null
+
+      if (label === this.NAME_LABEL) {
+        tracks = await this.tracksData.nameSearch(query).catch(apiCallErrorHandler)
+      }
+      else if (label === this.ARTIST_LABEL) {
+        tracks = await this.tracksData.artistSearch(query).catch(apiCallErrorHandler)
+      }
+      else if (label === this.GENRE_LABEL) {
+        tracks = await this.tracksData.genreSearch(query).catch(apiCallErrorHandler)
+      }
+      else if (label === this.DATE_ADDED_LABEL) {
+        tracks = await this.tracksData.dateSearch(query).catch(apiCallErrorHandler)
+      }
+      else if (label === this.PLAYLIST_LABEL) {
+        // tracks = await this.tracksData.playlistSearch(query).catch(apiCallErrorHandler)
+      }
+      else {
+        this.handleTrackSearchCancel()
+        return
+      }
 
       this.setState({
         searching: true,
@@ -71,9 +93,9 @@ class TrackTable extends React.Component {
       })
 
       if (tracks.length === this.tracksData.SEARCH_LIMIT) {
-        this.setSubtitle(`First ${tracks.length} results with "${query}" in track name`)
+        this.setSubtitle(`First ${tracks.length} results with "${query}" in ${label} name`)
       } else {
-        this.setSubtitle(`${tracks.length} results with "${query}" in track name`)
+        this.setSubtitle(`${tracks.length} results with "${query}" in ${label} name`)
       }
     }
   }
@@ -83,8 +105,8 @@ class TrackTable extends React.Component {
   }
 
   loadCurrentTrackPage = async () => {
-    if (this.playlistSearch.current) {
-      this.playlistSearch.current.clear()
+    if (this.trackSearch.current) {
+      this.trackSearch.current.clear()
     }
 
     try {
@@ -104,7 +126,7 @@ class TrackTable extends React.Component {
         () => {
           const min = ((this.state.currentPage - 1) * this.PAGE_SIZE) + 1
           const max = Math.min(min + this.PAGE_SIZE - 1, this.state.playlistCount)
-          this.setSubtitle(`${min}-${max} of ${this.state.playlistCount} tracks for ${this.userId}`)
+          this.setSubtitle(`${min}-${max} of ${this.state.playlistCount} songs for ${this.userId}`)
         }
       )
     } catch(error) {
@@ -278,17 +300,11 @@ class TrackTable extends React.Component {
             <thead>
               <tr>
                 <th style={{width: "30px"}}></th>
-                <th>
-                    <div style={{width: "120", display: "flex"}}>
-                        Name 
-                        <ConfigDropdown onConfigChanged={this.handleConfigChanged} ref={this.configDropdown}  />                        
-                    </div>
-                    <PlaylistSearch onPlaylistSearch={this.handleTrackSearch} onPlaylistSearchCancel={this.handleTrackSearchCancel} ref={this.playlistSearch}/>
-                </th>
-                <th style={{width: "100"}}>Artists</th>
-                <th style={{width: "250px"}}>Genres</th>
-                <th style={{width: "110px"}}>Date Added</th>
-                <th style={{width: "250px"}}>Playlists</th>
+                <DataFiltering label={this.NAME_LABEL} width="200px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
+                <DataFiltering label={this.ARTIST_LABEL} width="160px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
+                <DataFiltering label={this.GENRE_LABEL} width="200px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
+                <DataFiltering label={this.DATE_ADDED_LABEL} width="140px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
+                <DataFiltering label={this.PLAYLIST_LABEL} width="250px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
               </tr>
             </thead>
             <tbody>
