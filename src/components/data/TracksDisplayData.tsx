@@ -96,15 +96,27 @@ class TracksDisplayData {
 
   async playlistSearch(query: string) {
     await this.loadAllTracks()
+    let playlistTracks: any[] = []
 
     // Case-insensitive search in playlist name
-    return this.trackPlaylists.filter(item => item).filter( // TODO: Return tracks, not playlists
-      trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
-      queryWord => trackItem.some(
-      (playlist: any) => playlist.name.split(' ').some( // TODO: Only split when not searching multiple words for each searching method
-      (playlistWord: string) => queryWord !== "" 
-        && playlistWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
-    ))))
+    query.split(this.SPLIT_QUERY_EXPRESSION).map(
+      queryWord => this.trackPlaylists.forEach((playlists: any[], index: number) => {
+        if (!playlists) {
+          return
+        }
+        const selectedPlaylists = playlists.some(
+          (playlist: any) => playlist.name.split(' ').some( // TODO: Only split when not searching multiple words for each searching method
+          (playlistWord: string) => queryWord !== "" 
+            && playlistWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
+        ))
+        const currentTrack = this.trackData[index]
+        
+        if (selectedPlaylists && currentTrack) {
+          playlistTracks.push(this.trackData[index])
+        }
+      }))
+    
+    return playlistTracks
   }
 
   trackIndex(trackUri: string) {
@@ -158,12 +170,8 @@ class TracksDisplayData {
       this.trackPlaylists = Array(this.trackData.length).fill(null)
     }
 
-    const playlistTracks = await new TracksBaseData(this.accessToken, playlist).trackItems()
-
     const allLiked = await this.all()
-    const likedPlaylistTracks = allLiked.filter(t => playlistTracks.some(i => {
-      return i.track.id === t.track.id
-    }))
+    const likedPlaylistTracks = await this.getLikedPlaylistItems(playlist)
 
     for (let index = 0; index < likedPlaylistTracks.length; index++) {
       const elementIndex = allLiked.indexOf(likedPlaylistTracks[index]);
@@ -180,6 +188,14 @@ class TracksDisplayData {
     }
 
     return this.trackPlaylists
+  }
+
+  private async getLikedPlaylistItems(playlist: any) {
+    const playlistTracks = await new TracksBaseData(this.accessToken, playlist).trackItems()
+
+    return (await this.all()).filter(t => playlistTracks.some(i => {
+      return i.track.id === t.track.id
+    }))
   }
 
   private async loadLikedTracksSlice(start = 0, end = start + this.TRACK_LIMIT) {

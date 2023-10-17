@@ -79,7 +79,7 @@ class TrackTable extends React.Component {
         tracks = await this.tracksData.dateSearch(query).catch(apiCallErrorHandler)
       }
       else if (label === this.PLAYLIST_LABEL) {
-        // tracks = await this.tracksData.playlistSearch(query).catch(apiCallErrorHandler)
+        tracks = await this.tracksData.playlistSearch(query).catch(apiCallErrorHandler)
       }
       else {
         this.handleTrackSearchCancel()
