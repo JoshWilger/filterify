@@ -9,17 +9,17 @@ class TracksDisplayData {
 
   userId: string
   private accessToken: string
-  private onPlaylistsLoadingStarted?: () => void
-  private onPlaylistsLoadingDone?: () => void
+  private onTracksLoadingStarted?: () => void
+  private onTracksLoadingDone?: () => void
   private trackData: any[]
   private likedTracksPlaylist: any
   private trackDataInitialized = false
 
-  constructor(accessToken: string, userId: string, onPlaylistsLoadingStarted?: () => void, onPlaylistsLoadingDone?: () => void) {
+  constructor(accessToken: string, userId: string, onTracksLoadingStarted?: () => void, onTracksLoadingDone?: () => void) {
     this.accessToken = accessToken
     this.userId = userId
-    this.onPlaylistsLoadingStarted = onPlaylistsLoadingStarted
-    this.onPlaylistsLoadingDone = onPlaylistsLoadingDone
+    this.onTracksLoadingStarted = onTracksLoadingStarted
+    this.onTracksLoadingDone = onTracksLoadingDone
     this.trackData = []
   }
 
@@ -52,7 +52,7 @@ class TracksDisplayData {
       trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
       queryWord => trackItem.track.name.split(' ').some(
       (trackWord: string) => queryWord !== "" 
-        && trackWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
+        && this.searchCompareStrings(trackItem.track.name, trackWord, queryWord)
     )))
   }
 
@@ -65,7 +65,7 @@ class TracksDisplayData {
       queryWord => trackItem.track.artists.some(
       (artist: any) => artist.name.split(' ').some(
       (artistWord: string) => queryWord !== "" 
-        && artistWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
+        && this.searchCompareStrings(artist.name, artistWord, queryWord)
     ))))
   }
 
@@ -76,10 +76,11 @@ class TracksDisplayData {
     return this.trackData.filter(
       (trackItem: any) => query.split(this.SPLIT_QUERY_EXPRESSION).some(
       queryWord => trackItem.genres.some(
-      (genre: string) => genre.split(", ").some(
+      (genreList: string) => genreList.split(", ").some(
+      (genre: string) => genre.split(' ').some(
       (genreWord: string) => queryWord !== "" 
-        && genreWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())        
-    ))))
+        && this.searchCompareStrings(genre, genreWord, queryWord) 
+    )))))
   }
 
   async dateSearch(query: string) {
@@ -105,9 +106,9 @@ class TracksDisplayData {
           return
         }
         const selectedPlaylists = playlists.some(
-          (playlist: any) => playlist.name.split(' ').some( // TODO: Only split when not searching multiple words for each searching method
+          (playlist: any) => playlist.name.split(' ').some(
           (playlistWord: string) => queryWord !== "" 
-            && playlistWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
+            && this.searchCompareStrings(playlist.name, playlistWord, queryWord)
         ))
         const currentTrack = this.trackData[index]
         
@@ -117,6 +118,12 @@ class TracksDisplayData {
       }))
     
     return playlistTracks
+  }
+
+  private searchCompareStrings(baseWord: string, subBaseWord: string, queryWord: string) {
+    return queryWord.includes(" ")
+      ? baseWord.toLowerCase().includes(queryWord.toLowerCase())
+      : subBaseWord.toLowerCase().substring(0, queryWord.length).includes(queryWord.toLowerCase())
   }
 
   trackIndex(trackUri: string) {
