@@ -5,7 +5,8 @@ import TracksBaseData from "./TracksBaseData"
 class TracksDisplayData {
   TRACK_LIMIT = 50
   SEARCH_LIMIT = 20
-  private SPLIT_QUERY_EXPRESSION = new RegExp(", ") 
+  private ADD_QUERY_EXPRESSION = new RegExp(" ?\\+ ?")
+  private TRAITS_QUERY_EXPRESSION = new RegExp(" ?, ?")
 
   userId: string
   private accessToken: string
@@ -49,11 +50,11 @@ class TracksDisplayData {
 
     // Case-insensitive search in track name
     return this.trackData.filter(
-      trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
-      queryWord => trackItem.track.name.split(' ').some(
-      (trackWord: string) => queryWord !== "" 
-        && this.searchCompareStrings(trackItem.track.name, trackWord, queryWord)
-    )))
+      trackItem => query.split(this.ADD_QUERY_EXPRESSION).some(
+      queryWord => queryWord !== "" && queryWord.split(this.TRAITS_QUERY_EXPRESSION).every(
+      queryTrait => trackItem.track.name.split(' ').some(
+      (trackWord: string) => this.searchCompareStrings(trackItem.track.name, trackWord, queryTrait)
+    ))))
   }
 
   async artistSearch(query: string) {
@@ -61,12 +62,12 @@ class TracksDisplayData {
 
     // Case-insensitive search in artist name
     return this.trackData.filter(
-      trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
-      queryWord => trackItem.track.artists.some(
+      trackItem => query.split(this.ADD_QUERY_EXPRESSION).some(
+      queryWord => queryWord !== "" && queryWord.split(this.TRAITS_QUERY_EXPRESSION).every(
+      queryTrait => trackItem.track.artists.some(
       (artist: any) => artist.name.split(' ').some(
-      (artistWord: string) => queryWord !== "" 
-        && this.searchCompareStrings(artist.name, artistWord, queryWord)
-    ))))
+      (artistWord: string) => this.searchCompareStrings(artist.name, artistWord, queryTrait)
+    )))))
   }
 
   async genreSearch(query: string) {
@@ -74,13 +75,13 @@ class TracksDisplayData {
 
     // Case-insensitive search in genre name
     return this.trackData.filter(
-      (trackItem: any) => query.split(this.SPLIT_QUERY_EXPRESSION).some(
-      queryWord => trackItem.genres.some(
+      (trackItem: any) => query.split(this.ADD_QUERY_EXPRESSION).some(
+      queryWord => queryWord !== "" && queryWord.split(this.TRAITS_QUERY_EXPRESSION).every(
+      queryTrait => trackItem.genres.some(
       (genreList: string) => genreList.split(", ").some(
       (genre: string) => genre.split(' ').some(
-      (genreWord: string) => queryWord !== "" 
-        && this.searchCompareStrings(genre, genreWord, queryWord) 
-    )))))
+      (genreWord: string) => this.searchCompareStrings(genre, genreWord, queryTrait) 
+    ))))))
   }
 
   async dateSearch(query: string) {
@@ -88,11 +89,11 @@ class TracksDisplayData {
 
     // Case-insensitive search in date added name
     return this.trackData.filter(
-      trackItem => query.split(this.SPLIT_QUERY_EXPRESSION).some(
-      queryWord => queryWord !== "" 
-        && (trackItem.added_at.split("T")[0].substring(5) + "-" + trackItem.added_at.split("T")[0].substring(0, 4))
-        .includes(queryWord.toLowerCase())
-    ))
+      trackItem => query.split(this.ADD_QUERY_EXPRESSION).some(
+        queryWord => queryWord !== "" && queryWord.split(this.TRAITS_QUERY_EXPRESSION).every(
+        queryTrait => (trackItem.added_at.split("T")[0].substring(5) + "-" + trackItem.added_at.split("T")[0].substring(0, 4))
+        .includes(queryTrait.toLowerCase())
+    )))
   }
 
   async playlistSearch(query: string) {
@@ -100,16 +101,16 @@ class TracksDisplayData {
     let playlistTracks: any[] = []
 
     // Case-insensitive search in playlist name
-    query.split(this.SPLIT_QUERY_EXPRESSION).map(
+    query.split(this.ADD_QUERY_EXPRESSION).map(
       queryWord => this.trackPlaylists.forEach((playlists: any[], index: number) => {
         if (!playlists) {
           return
         }
-        const selectedPlaylists = playlists.some(
+        const selectedPlaylists = queryWord !== "" && queryWord.split(this.TRAITS_QUERY_EXPRESSION).every(
+          queryTrait => playlists.some(
           (playlist: any) => playlist.name.split(' ').some(
-          (playlistWord: string) => queryWord !== "" 
-            && this.searchCompareStrings(playlist.name, playlistWord, queryWord)
-        ))
+          (playlistWord: string) => this.searchCompareStrings(playlist.name, playlistWord, queryTrait)
+        )))
         const currentTrack = this.trackData[index]
         
         if (selectedPlaylists && currentTrack) {

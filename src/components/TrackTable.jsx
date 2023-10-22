@@ -93,7 +93,7 @@ class TrackTable extends React.Component {
       })
 
       if (tracks.length === this.tracksData.SEARCH_LIMIT) {
-        this.setSubtitle(`First ${tracks.length} results with "${query}" in ${label} name`)
+        this.setSubtitle(`First ${tracks.length} results with "${query}" in ${label} name`) // TODO: add limit field to enable this
       } else {
         this.setSubtitle(`${tracks.length} results with "${query}" in ${label} name`)
       }
@@ -276,7 +276,13 @@ class TrackTable extends React.Component {
   }
 
   render() {
-    const progressBar = <ProgressBar striped variant="primary" animated={this.state.progressBar.value < this.state.playlistCount} now={this.state.progressBar.value} max={this.state.playlistCount} label={this.state.progressBar.label} />
+    const progressBar = <ProgressBar 
+                          striped variant="primary" 
+                          animated={this.state.progressBar.value < this.state.playlistCount} 
+                          now={this.state.progressBar.value} 
+                          max={this.state.playlistCount} 
+                          label={this.state.progressBar.label} 
+                        />
 
     if (this.state.initialized) {
       return (
@@ -300,11 +306,41 @@ class TrackTable extends React.Component {
             <thead>
               <tr>
                 <th style={{width: "30px"}}></th>
-                <DataFiltering label={this.NAME_LABEL} width="200px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
-                <DataFiltering label={this.ARTIST_LABEL} width="160px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
-                <DataFiltering label={this.GENRE_LABEL} width="200px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
-                <DataFiltering label={this.DATE_ADDED_LABEL} width="140px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
-                <DataFiltering label={this.PLAYLIST_LABEL} width="250px" onConfigChanged={this.handleConfigChanged} onSearch={this.handleTrackSearch} onSearchCancel={this.handleTrackSearchCancel} />
+                <DataFiltering 
+                  label={this.NAME_LABEL} 
+                  width="200px" 
+                  onConfigChanged={this.handleConfigChanged} 
+                  onSearch={this.handleTrackSearch} 
+                  onSearchCancel={this.handleTrackSearchCancel} 
+                />
+                <DataFiltering 
+                  label={this.ARTIST_LABEL} 
+                  width="160px" 
+                  onConfigChanged={this.handleConfigChanged} 
+                  onSearch={this.handleTrackSearch} 
+                  onSearchCancel={this.handleTrackSearchCancel} 
+                />
+                <DataFiltering 
+                  label={this.GENRE_LABEL} 
+                  width="200px" 
+                  onConfigChanged={this.handleConfigChanged} 
+                  onSearch={this.handleTrackSearch} 
+                  onSearchCancel={this.handleTrackSearchCancel} 
+                />
+                <DataFiltering 
+                  label={this.DATE_ADDED_LABEL} 
+                  width="140px" 
+                  onConfigChanged={this.handleConfigChanged} 
+                  onSearch={this.handleTrackSearch} 
+                  onSearchCancel={this.handleTrackSearchCancel} 
+                />
+                <DataFiltering 
+                  label={this.PLAYLIST_LABEL} 
+                  width="250px" 
+                  onConfigChanged={this.handleConfigChanged} 
+                  onSearch={this.handleTrackSearch} 
+                  onSearchCancel={this.handleTrackSearchCancel} 
+                />
               </tr>
             </thead>
             <tbody>
