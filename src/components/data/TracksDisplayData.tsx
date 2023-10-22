@@ -103,7 +103,11 @@ class TracksDisplayData {
     // Case-insensitive search in playlist name
     query.split(this.ADD_QUERY_EXPRESSION).map(
       queryWord => this.trackPlaylists.forEach((playlists: any[], index: number) => {
+        const currentTrack = this.trackData[index]
         if (!playlists) {
+          if (queryWord.toLowerCase().includes("none") && currentTrack) {
+            playlistTracks.push(currentTrack)
+          }
           return
         }
         const selectedPlaylists = queryWord !== "" && queryWord.split(this.TRAITS_QUERY_EXPRESSION).every(
@@ -111,14 +115,13 @@ class TracksDisplayData {
           (playlist: any) => playlist.name.split(' ').some(
           (playlistWord: string) => this.searchCompareStrings(playlist.name, playlistWord, queryTrait)
         )))
-        const currentTrack = this.trackData[index]
         
-        if (selectedPlaylists && currentTrack) {
-          playlistTracks.push(this.trackData[index])
+        if (selectedPlaylists && currentTrack && !playlistTracks.includes(currentTrack)) {
+          playlistTracks.push(currentTrack)
         }
       }))
     
-    return playlistTracks
+    return playlistTracks.sort((a, b) => b.added_at.localeCompare(a.added_at))
   }
 
   private searchCompareStrings(baseWord: string, subBaseWord: string, queryWord: string) {
