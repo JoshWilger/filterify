@@ -144,7 +144,7 @@ class TracksDisplayData {
   }
 
   async loadArtistData(currentTracks: any) {
-    const artistIds = Array.from(new Set(currentTracks.map((trackItem: any) => {
+    const artistIds = Array.from(new Set(currentTracks.flatMap((trackItem: any) => {
       return trackItem.track
         .artists
         .filter((a: any) => a.type === "artist")
@@ -161,15 +161,15 @@ class TracksDisplayData {
     const artistPromises = requests.map(request => { return apiCall(request, this.accessToken) })
     const artistResponses = await Promise.all(artistPromises)
 
-    const artistsById = new Map(artistResponses.flatMap((response) => response.data.artists).map((artist: any) => [artist.id, artist]))
+    const artistsById = new Map(artistResponses.flatMap((response) => response.data.artists).filter((a:any) => a).map((artist: any) => [artist.id, artist]))
 
     return new Map<string, string[]>(currentTracks.map((trackItem: any) => {
       return [
         trackItem.track.uri,
         [
           trackItem.track.artists.map((a: any) => {
-            return artistsById.has(a.id) ? artistsById.get(a.id)!.genres.filter((g: string) => g).join(', ') : ""
-          }).filter((g: string) => g).join(", ")
+            return artistsById.has(a.id) ? artistsById.get(a.id)!.genres.map((g: string) => g).join(', ') : ""
+          }).map((g: any) => g ? g : g="-").join(" | ")
         ]
       ]
     }))
