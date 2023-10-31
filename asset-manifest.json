@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/filterify/static/css/main.5afc2931.css",
+    "main.js": "/filterify/static/js/main.b1905ce5.js",
+    "static/js/377.d618b3c7.chunk.js": "/filterify/static/js/377.d618b3c7.chunk.js",
+    "index.html": "/filterify/index.html",
+    "main.5afc2931.css.map": "/filterify/static/css/main.5afc2931.css.map",
+    "main.b1905ce5.js.map": "/filterify/static/js/main.b1905ce5.js.map",
+    "377.d618b3c7.chunk.js.map": "/filterify/static/js/377.d618b3c7.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5afc2931.css",
+    "static/js/main.b1905ce5.js"
+  ]
+}
