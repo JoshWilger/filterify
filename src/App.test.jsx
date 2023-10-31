@@ -28,7 +28,7 @@ describe("logging in", () => {
     await userEvent.click(linkElement)
 
     expect(window.location.href).toBe(
-      "https://accounts.spotify.com/authorize?client_id=9950ac751e34487dbbe027c4fd7f8e99&redirect_uri=%2F%2F&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read&response_type=token&show_dialog=false"
+      "https://accounts.spotify.com/authorize?client_id=0b6fad5fe44d42f6aef637b9fa7ce6a9&redirect_uri=%2F%2F&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read&response_type=token&show_dialog=false"
     )
   })
 
@@ -71,7 +71,7 @@ describe("logging out", () => {
     await userEvent.click(getStartedElement)
 
     expect(window.location.href).toBe(
-      "https://accounts.spotify.com/authorize?client_id=9950ac751e34487dbbe027c4fd7f8e99&redirect_uri=%2F%2F&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read&response_type=token&show_dialog=true"
+      "https://accounts.spotify.com/authorize?client_id=0b6fad5fe44d42f6aef637b9fa7ce6a9&redirect_uri=%2F%2F&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read&response_type=token&show_dialog=true"
     )
   })
 })

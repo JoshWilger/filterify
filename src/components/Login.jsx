@@ -10,7 +10,7 @@ class Login extends React.Component {
 
     // Use Exportify application clientId if none given
     if (clientId === '') {
-      clientId = "9950ac751e34487dbbe027c4fd7f8e99"
+      clientId = "0b6fad5fe44d42f6aef637b9fa7ce6a9"
     }
 
     window.location.href = "https://accounts.spotify.com/authorize" +
