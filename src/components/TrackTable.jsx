@@ -176,7 +176,9 @@ class TrackTable extends React.Component {
   }
 
   loadLikedTracks = async () => {
-    for (var offset = 0; offset < this.state.playlistCount; offset = offset + this.PAGE_SIZE) {
+    const totalTracks = await this.tracksData.totalTracks()
+    
+    for (var offset = 0; offset < totalTracks; offset = offset + this.PAGE_SIZE) {
         this.handleTrackDataLoadingStarted(this.LIKED_SONGS_LABEL, offset)
 
         await this.tracksData.tracksSlice(offset, offset + this.PAGE_SIZE)
