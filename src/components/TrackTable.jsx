@@ -8,12 +8,12 @@ import Paginator from "./Paginator"
 import TracksExporter from "./TracksExporter"
 import { apiCall, apiCallErrorHandler } from "helpers"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button } from "react-bootstrap"
 import PlaylistsData from "./data/PlaylistsData"
 import DataFiltering from "./DataFiltering"
+import ConfigDropdown from "./ConfigDropdown"
 
 class TrackTable extends React.Component {
-  PAGE_SIZE = 10
+  PAGE_SIZE = 50
   LIKED_SONGS_LABEL = "liked songs"
   NAME_LABEL = "Song"
   ARTIST_LABEL = "Artists"
@@ -295,13 +295,15 @@ class TrackTable extends React.Component {
                 accessToken={this.props.accessToken}
                 onPlaylistsExportDone={this.handlePlaylistsExportDone}
                 onPlaylistExportStarted={this.handlePlaylistExportStarted}
-                playlistsData={this.tracksData}
+                trackData={this.state.searching ? this.state.tracks : this.tracksData}
                 config={this.state.config}
-                disabled={this.state.searching}
+                searching={this.state.searching}
+                loading={this.state.progressBar.show}
             />
-            <Button type="submit" variant="danger" size="sm" onClick={this.exportPlaylist} className="text-nowrap" style={{margin:"0px 0px 15px 20px"}}>
+            {/* <Button type="submit" variant="danger" size="sm" onClick={this.exportPlaylist} className="text-nowrap" style={{margin:"0px 0px 15px 20px"}}>
                 <FontAwesomeIcon icon={['fas', 'times']} size="1x" /> Reset Filters
-            </Button>
+            </Button> */}
+            <ConfigDropdown onConfigChanged={this.handleConfigChanged} ref={this.configDropdown}></ConfigDropdown>
             {this.state.progressBar.show && progressBar ? progressBar : <p style={{margin: "3px 0px 0px 20px"}}>Data Loaded <FontAwesomeIcon icon={['far', 'check-circle']} size="sm" /></p>}
           </div>
           <table className="table table-hover table-sm">

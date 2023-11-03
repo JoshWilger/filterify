@@ -9,7 +9,6 @@ type ConfigDropdownProps = {
 }
 
 class ConfigDropdown extends React.Component<ConfigDropdownProps> {
-  private includeArtistsDataCheck = React.createRef<HTMLInputElement>()
   private includeAudioFeaturesDataCheck = React.createRef<HTMLInputElement>()
   private includeAlbumDataCheck = React.createRef<HTMLInputElement>()
 
@@ -22,7 +21,6 @@ class ConfigDropdown extends React.Component<ConfigDropdownProps> {
 
     if ((event.target as HTMLElement).nodeName === "INPUT") {
       this.props.onConfigChanged({
-        includeArtistsData: this.includeArtistsDataCheck.current?.checked || false,
         includeAudioFeaturesData: this.includeAudioFeaturesDataCheck.current?.checked || false,
         includeAlbumData: this.includeAlbumDataCheck.current?.checked || false
       })
@@ -40,14 +38,6 @@ class ConfigDropdown extends React.Component<ConfigDropdownProps> {
           <FontAwesomeIcon icon={['fas', 'cog']} size="lg" spin={this.state.spin} />
         </Dropdown.Toggle>
         <Dropdown.Menu align="right">
-          <Dropdown.Item onClickCapture={this.handleCheckClick} as="div">
-            <Form.Check
-              id="config-include-artists-data"
-              type="switch"
-              label="Include artists data"
-              ref={this.includeArtistsDataCheck}
-            />
-          </Dropdown.Item>
           <Dropdown.Item onClickCapture={this.handleCheckClick} as="div">
             <Form.Check
               id="config-include-audio-features-data"

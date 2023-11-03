@@ -1,5 +1,5 @@
 import { apiCall } from "helpers"
-import TracksBaseData from "./TracksBaseData"
+import TracksPlaylistData from "./TracksPlaylistData"
 
 // Handles cached loading of all or subsets of playlist data
 class TracksDisplayData {
@@ -202,7 +202,7 @@ class TracksDisplayData {
   }
 
   private async getLikedPlaylistItems(playlist: any) {
-    const playlistTracks = await new TracksBaseData(this.accessToken, playlist).trackItems()
+    const playlistTracks = await new TracksPlaylistData(this.accessToken, playlist).trackItems()
 
     return (await this.all()).filter(t => playlistTracks.some(i => {
       return i.track.id === t.track.id

@@ -19,7 +19,7 @@ class DataFiltering extends React.Component<DataFilteringProps> {
     <th style={{width: this.props.width}}>
         <div style={{display: "flex"}}>
             {this.props.label} 
-            <ConfigDropdown onConfigChanged={this.props.onConfigChanged} ref={this.configDropdown}  />                        
+            {/* <ConfigDropdown onConfigChanged={this.props.onConfigChanged} ref={this.configDropdown}  />                         */}
         </div>
         <PlaylistSearch label={this.props.label} onPlaylistSearch={this.props.onSearch} onPlaylistSearchCancel={this.props.onSearchCancel} ref={this.searchBar}/>
     </th>
