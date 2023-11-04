@@ -296,6 +296,14 @@ class TrackTable extends React.Component {
                 onPlaylistsExportDone={this.handlePlaylistsExportDone}
                 onPlaylistExportStarted={this.handlePlaylistExportStarted}
                 trackData={this.state.searching ? this.state.tracks : this.tracksData}
+                likedPlaylistTracks={
+                  this.state.searching && !this.state.progressBar.show
+                  ? this.state.tracks.map((trackItem) => {
+                    const index = this.tracksData.trackIndex(trackItem.track.uri)
+                    return this.state.likedPlaylistTracks[index]?.map(playlist => playlist.name).join(", ")
+                  })
+                  : this.tracksData.allTrackPlaylists().map(track => track?.map(playlist => playlist.name).join(", "))
+                }
                 config={this.state.config}
                 searching={this.state.searching}
                 loading={this.state.progressBar.show}

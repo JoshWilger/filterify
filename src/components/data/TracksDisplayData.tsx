@@ -1,5 +1,4 @@
 import { apiCall } from "helpers"
-import TracksPlaylistData from "./TracksPlaylistData"
 
 // Handles cached loading of all or subsets of playlist data
 class TracksDisplayData {
@@ -175,6 +174,10 @@ class TracksDisplayData {
     }))
   }
 
+  allTrackPlaylists() {
+    return this.trackPlaylists
+  }
+
   private trackPlaylists: any[][] = []
   async loadTrackPlaylists(playlist: any) {
     if (this.trackPlaylists.length === 0) {
@@ -202,9 +205,25 @@ class TracksDisplayData {
   }
 
   private async getLikedPlaylistItems(playlist: any) {
-    const playlistTracks = await new TracksPlaylistData(this.accessToken, playlist).trackItems()
+    var playlistItems: any[] = []
 
-    return (await this.all()).filter(t => playlistTracks.some(i => {
+    if (playlistItems.length === 0) {
+      var requests = []
+      var limit = playlist.tracks.limit ? 50 : 100
+
+      for (var offset = 0; offset < playlist.tracks.total; offset = offset + limit) {
+        requests.push(`${playlist.tracks.href.split('?')[0]}?offset=${offset}&limit=${limit}`)
+      }
+
+      const trackPromises = requests.map(request => { return apiCall(request, this.accessToken) })
+      const trackResponses = await Promise.all(trackPromises)
+
+      playlistItems = trackResponses.flatMap(response => {
+        return response.data.items.filter((i: any) => i.track) // Exclude null track attributes
+      })      
+    }
+
+    return (await this.all()).filter(t => playlistItems.some(i => {
       return i.track.id === t.track.id
     }))
   }

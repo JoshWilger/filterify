@@ -1,40 +1,26 @@
-import { apiCall } from "helpers"
+import TracksData from "./TracksData"
 
-class TracksPlaylistData {
-  accessToken: string
-  playlist: any
+class TracksPlaylistData extends TracksData {
+  tracks: Map<string, string[]>
 
-  constructor(accessToken: string, playlist: any) {
-    this.accessToken = accessToken
-    this.playlist = playlist
+  constructor(accessToken: string, trackItems: any[], trackPlaylists: string[]) {
+    super(accessToken)
+    this.tracks = new Map<string, string[]>(trackPlaylists.map((playlists: string, i) => {
+      return [
+        trackItems[i].track.uri,
+        [playlists ? playlists : ""]
+      ]
+    }))
   }
 
-  async trackItems() {
-    await this.getPlaylistItems()
-
-    return this.playlistItems
+  dataLabels() {
+    return [
+      "Included Playlists"
+    ]
   }
 
-  // Memoization supporting multiple calls
-  private playlistItems: any[] = []
-  private async getPlaylistItems() {
-    if (this.playlistItems.length > 0) {
-      return this.playlistItems
-    }
-
-    var requests = []
-    var limit = this.playlist.tracks.limit ? 50 : 100
-
-    for (var offset = 0; offset < this.playlist.tracks.total; offset = offset + limit) {
-      requests.push(`${this.playlist.tracks.href.split('?')[0]}?offset=${offset}&limit=${limit}`)
-    }
-
-    const trackPromises = requests.map(request => { return apiCall(request, this.accessToken) })
-    const trackResponses = await Promise.all(trackPromises)
-
-    this.playlistItems = trackResponses.flatMap(response => {
-      return response.data.items.filter((i: any) => i.track) // Exclude null track attributes
-    })
+  async data() {
+    return this.tracks
   }
 }
 

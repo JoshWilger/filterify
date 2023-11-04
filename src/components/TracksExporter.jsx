@@ -8,24 +8,27 @@ import TracksCsvFile from "components/data/TracksCsvFile"
 import TracksBaseData from "components/data/TracksBaseData"
 import TracksAudioFeaturesData from "components/data/TracksAudioFeaturesData"
 import TracksAlbumData from "components/data/TracksAlbumData"
+import TracksPlaylistData from "./data/TracksPlaylistData"
 
   // Handles exporting given tracks as a CSV file
   class TracksExporter extends React.Component {
   async export() {
     return this.csvData().then((data) => {
       var blob = new Blob([ data ], { type: "text/csv;charset=utf-8" })
-      saveAs(blob, "liked_songs_test", true)
+      saveAs(blob, "filterify_songs", true)
     })
   }
 
   async csvData() {
     const trackItems = this.props.searching ? this.props.trackData : await this.props.trackData.all(this.props.onLoadedPlaylistCountChanged)
     const tracksBaseData = new TracksBaseData(this.props.accessToken, trackItems)
+    const tracksPlaylist = new TracksPlaylistData(this.props.accessToken, trackItems, this.props.likedPlaylistTracks)
     const tracks = trackItems.map(i => i.track)
     const tracksCsvFile = new TracksCsvFile(trackItems)
 
     // Add base data before existing (item) data, for backward compatibility
     await tracksCsvFile.addData(tracksBaseData, true)
+    await tracksCsvFile.addData(tracksPlaylist)
 
     if (this.props.config.includeAudioFeaturesData) {
       await tracksCsvFile.addData(new TracksAudioFeaturesData(this.props.accessToken, tracks))
