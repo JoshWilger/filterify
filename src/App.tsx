@@ -1,5 +1,6 @@
 import './App.scss'
 import "./icons"
+import logo from "./favicon.png"
 
 import React from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -31,7 +32,7 @@ function App() {
       <header className="App-header">
         { key.has('access_token') && <Logout /> }
         <h1>
-          <FontAwesomeIcon icon={['fab', 'spotify']} color="#84BD00" size="sm" /> <a href={process.env.PUBLIC_URL}>Filterify</a>
+          <img src={logo} height="35px" width="35px" style={{margin: "5px 0px 12px 0px"}} alt='' /> <a href={process.env.PUBLIC_URL}>Filterify</a>
         </h1>
 
         <p id="subtitle" className="lead text-secondary">

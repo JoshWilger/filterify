@@ -314,6 +314,9 @@ class TrackTable extends React.Component {
             <ConfigDropdown onConfigChanged={this.handleConfigChanged} ref={this.configDropdown}></ConfigDropdown>
             {this.state.progressBar.show && progressBar ? progressBar : <p style={{margin: "3px 0px 0px 20px"}}>Data Loaded <FontAwesomeIcon icon={['far', 'check-circle']} size="sm" /></p>}
           </div>
+          <div>
+            <p style={{fontSize: "15px"}} className="lead text-secondary">Hint: In the search bar, use '+' to return results for multiple searches at once and use ',' to return results that match multiple search criteria. </p>
+          </div>
           <table className="table table-hover table-sm">
             <thead>
               <tr>
