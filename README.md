@@ -25,7 +25,7 @@ Once filtered tracks are saved, it's also pretty straightforward to import them 
 
 To filter through your songs quickly, use any of the search bars to return a number of songs that match what you search for in the column that you search in.
 
-<a href="https://joshwilger.github.io/filterify/"><img src="https://user-images.githubusercontent.com/17737/100201109-eb0d7d00-2eff-11eb-993e-7ed955e2361c.gif"/></a>
+<a href="https://joshwilger.github.io/filterify/"><img src="search.gif"/></a>
 
 To perform a more detailed search, the following keys can be used in a single search box to perform multiple operations:
 
@@ -63,7 +63,7 @@ Track data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_val
 
 By clicking on the cog, additional data can be exported.
 
-<a href="https://joshwilger.github.io/filterify/"><img src="https://user-images.githubusercontent.com/17737/100668594-72be1600-335c-11eb-90d6-c9ae873e347d.png"/></a>
+<a href="https://joshwilger.github.io/filterify/"><img src="screenshot-config.png"/></a>
 
 And by selecting "Include audio features data", the following fields will be added from the [Spotify audio features object](https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-audio-features/):
 
