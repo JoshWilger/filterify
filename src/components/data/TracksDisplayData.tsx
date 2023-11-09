@@ -195,7 +195,7 @@ class TracksDisplayData {
         if (!current) {
           this.trackPlaylists[elementIndex] = [playlist]
         }
-        else if (!current.includes(playlist)) {
+        else if (!current.map(p => p.uri).includes(playlist.uri)) {
           this.trackPlaylists[elementIndex].push(playlist)
         }
       }
